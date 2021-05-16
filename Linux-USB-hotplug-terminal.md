@@ -10,9 +10,9 @@ The involved `ttyUSB` devices will by default be automatically created by the OS
 
 Hardware connections:
 ```
-USB	-> FTDI1		FTDI2 <- USB
-		TX	  <->	RX
-		RX    <->   TX
+USB -> FTDI1       FTDI2 <- USB
+        TX    <->   RX
+        RX    <->   TX
         GND   <->   GND
 ```
 It does not matter if the FTDI adapters are 3.3V or 5V logic level type as long as they are the same. Also, don't connect VCC between them! Both ends are assumed to be using 115200 kbit settings.
