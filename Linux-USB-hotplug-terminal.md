@@ -54,8 +54,8 @@ Create the corresponding script `/usr/local/bin/reload-usb-tty.sh`:
 #!/bin/bash
 DEVICE=${DEVPATH##*/}
 if [ "${ACTION}" = "bind" ]; then
-	/usr/bin/systemctl stop serial-getty@${DEVICE}.service
-	/usr/bin/systemctl start serial-getty@${DEVICE}.service
+	systemctl stop serial-getty@${DEVICE}.service
+	systemctl start serial-getty@${DEVICE}.service
 fi
 ```
 Also make it executable: `chmod +x /usr/local/bin/reload-usb-tty.sh`
