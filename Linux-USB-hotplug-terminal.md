@@ -6,9 +6,9 @@ This setup is a bit different from the config needed if the USB serial adapter i
 
 This configuration is tested on recent versions of Ubuntu and on RaspberryPi OS. Other systemd based Linux distributions may also work if configured the same way. The USB-to-serial adapters tested are using the common FTDI FT232 chipsets and the `ftdi_sio` Linux driver but any that show up in the OS as `/dev/ttyUSB*` devices could possibly work without changes. 
 
-The involved `ttyUSB` devices will by default be automatically created by the OS when a FTDI adapter is plugged in. To also enable the creation of login terminals we need to add some extra configuration.
+The `ttyUSB` devices will be automatically created by the OS when a FTDI adapter is plugged in. To also enable the creation of login terminals we need to add this extra configuration.
 
-Hardware connections:
+## Hardware connections
 ```
 USB -> FTDI1       FTDI2 <- USB
         TX    <->   RX
@@ -54,7 +54,6 @@ Create the corresponding script `/usr/local/bin/reload-usb-tty.sh`:
 #!/bin/bash
 DEVICE=${DEVPATH##*/}
 if [ "${ACTION}" = "bind" ]; then
-	systemctl stop serial-getty@${DEVICE}.service
 	systemctl start serial-getty@${DEVICE}.service
 fi
 ```
