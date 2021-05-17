@@ -53,6 +53,7 @@ Create the corresponding script `/usr/local/bin/reload-usb-tty.sh`:
 ```bash
 #!/bin/bash
 DEVICE=${DEVPATH##*/}
+# logger "$( basename $0 ): udev: ${ACTION} ${DEVPATH}"  # optional syslog message
 if [ "${ACTION}" = "bind" ]; then
 	systemctl start serial-getty@${DEVICE}.service
 fi
