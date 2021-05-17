@@ -79,8 +79,8 @@ Example configuration: Create the file `/etc/profile.d/ttyusb-autologout.sh` wit
 if [[ $(tty) == /dev/ttyUSB* ]]; then export TMOUT=600; fi
 ```
 
-# Notes
+## Notes
 * Enabling this, in particular with automatic login, may have security implications if used outside of your home lab. 
 * Booting the target computer with the FTDI adapter plugged in will make systemd timeout while trying to activate the device. This will add a minute or two to the boot time. It might be possible to fix (not investigated). 
-
+* How to quit `screen`? Press `ctrl+a`, then `k`. 
 
