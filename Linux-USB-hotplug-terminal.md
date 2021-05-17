@@ -4,7 +4,7 @@ USB hotplug configuration to get a login terminal on a keyboard and/or monitorle
 
 This setup is a bit different from the config needed if the USB serial adapter is to be permanently plugged in - how to set that up is described [here](https://www.rogerirwin.co.nz/open-source/enabling-a-serial-port-console/) and in other places.
 
-This configuration is tested on recent versions of Ubuntu and on RaspberryPi OS. Other systemd based Linux distributions may also work if configured the same way. The USB-to-serial adapters tested are using the common FTDI FT232 chipsets and the `ftdi_sio` Linux driver but any that show up in the OS as /dev/ttyUSB* devices could possibly work without changes. 
+This configuration is tested on recent versions of Ubuntu and on RaspberryPi OS. Other systemd based Linux distributions may also work if configured the same way. The USB-to-serial adapters tested are using the common FTDI FT232 chipsets and the `ftdi_sio` Linux driver but any that show up in the OS as `/dev/ttyUSB*` devices could possibly work without changes. 
 
 The involved `ttyUSB` devices will by default be automatically created by the OS when a FTDI adapter is plugged in. To also enable the creation of login terminals we need to add some extra configuration.
 
