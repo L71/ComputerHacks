@@ -42,7 +42,7 @@ You may need to run `systemctl daemon-reload` to make systemd reload the config.
 
 ### udev rule addition + script
 
-A hotplug rule needs to be added to the `UDEV` subsystem together with a script that will (re)start the login TTY when the FTDI adapter is plugged in.
+A hotplug rule needs to be added to the `UDEV` subsystem together with a script that will start the login TTY when the FTDI adapter is plugged in.
 
 Create the file `/etc/udev/rules.d/99-hotplug-usb-tty.rules` with the following content:
 ```
@@ -83,4 +83,34 @@ if [[ $(tty) == /dev/ttyUSB* ]]; then export TMOUT=600; fi
 * Enabling this, in particular with automatic login, may have security implications if used outside of your home lab. 
 * Booting the target computer with the FTDI adapter plugged in will make systemd timeout while trying to activate the device. This will add a minute or two to the boot time. It might be possible to fix (not investigated). 
 * How to quit `screen`? Press `ctrl+a`, then `k`. 
+
+## Scripted setup
+```bash
+#!/bin/bash
+
+# adjust systemd serial TTY service
+sed -i.backup 's|^ExecStart=.*|ExecStart=-/sbin/agetty 115200 %I $TERM|' /lib/systemd/system/serial-getty@.service
+
+# add UDEV hotplug rule
+cat > /etc/udev/rules.d/99-hotplug-usb-tty.rules <<-EOF
+KERNEL=="ttyUSB*", RUN+="/usr/local/bin/reload-usb-tty.sh"
+EOF
+
+# script
+cat > /usr/local/bin/reload-usb-tty.sh <<-EOF
+#!/bin/bash
+DEVICE=\${DEVPATH##*/}
+# logger "\$( basename \$0 ): udev: \${ACTION} \${DEVPATH}"  # optional syslog message
+if [ "\${ACTION}" = "bind" ]; then
+    systemctl start serial-getty@\${DEVICE}.service
+fi
+EOF
+chmod +x /usr/local/bin/reload-usb-tty.sh
+
+# autologout idle shells
+cat > /etc/profile.d/ttyusb-autologout.sh <<-EOF
+# autologout ttyUSB logins, TMOUT in seconds
+if [[ \$(tty) == /dev/ttyUSB* ]]; then export TMOUT=600; fi
+EOF
+```
 
