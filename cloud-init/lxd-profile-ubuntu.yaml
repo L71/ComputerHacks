@@ -1,0 +1,66 @@
+#cloud-config
+
+# setup a small swap file (only useful on VMs)
+# swap:
+#   filename: /swapfile
+#   size: 500M
+
+users:
+  - name: user
+    gecos: User Lastname
+    shell: /bin/bash
+    lock_passwd: false
+    passwd: <encrypted password string>
+    ssh_authorized_keys: 
+      - <public ssh key>
+    sudo: ALL=(ALL) NOPASSWD:ALL
+  - name: ansible
+    gecos: ansible user
+    shell: /bin/bash
+    lock_passwd: true
+    ssh_authorized_keys: 
+      - <public ssh key>
+    sudo: ALL=(ALL) NOPASSWD:ALL
+
+
+# packages:
+#   - stress
+package_update: true
+package_upgrade: true
+
+
+packages:
+  - stress
+  - landscape-client
+  - python-is-python3
+
+write_files:
+- content: |
+    -----BEGIN CERTIFICATE-----
+    content
+    of
+    certificate
+    -----END CERTIFICATE-----
+  path: /etc/landscape/server.pem
+  permissions: '0644'
+
+landscape:
+  client:
+    url: https://landscape/message-system
+    ping_url: http://landscape/ping 
+    registration_key: <regkey>
+    account_name: standalone
+    script_users: root
+    ssl_public_key: /etc/landscape/server.pem
+
+runcmd:
+  - sed -i "s|PasswordAuthentication.*|PasswordAuthentication yes|" /etc/ssh/sshd_config
+  - landscape-config --silent -t $( hostname ) --tags=lxc
+  - timedatectl set-timezone Europe/Stockholm
+  - ufw enable && ufw allow ssh
+  - snap remove lxd
+
+# reboot after finish
+power_state:
+  mode: reboot
+  delay: now

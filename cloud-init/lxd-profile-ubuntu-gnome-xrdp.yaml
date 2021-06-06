@@ -1,0 +1,118 @@
+#cloud-config
+
+#cloud-config
+
+# setup a small swap file (only useful on VMs)
+# swap:
+#   filename: /swapfile
+#   size: 500M
+
+
+package_update: true
+package_upgrade: true
+packages:
+  - stress
+  - landscape-client
+  - ubuntu-desktop-minimal
+  - fonts-cascadia-code
+  - gnome-tweaks
+  - xrdp
+  - python-is-python3
+
+
+write_files:
+
+# set some defaults for the GNOME desktop (only on first login)
+- content: |
+    #!/bin/bash
+    if [ ! -f "$HOME/.gnome_set_defaults" ]; then
+      gsettings set org.gnome.shell favorite-apps "[ 'firefox.desktop', 'org.gnome.Terminal.desktop', 'org.gnome.Nautilus.desktop', 'gnome-control-center.desktop', 'org.gnome.tweaks.desktop']"
+      gsettings set org.gnome.desktop.wm.preferences button-layout 'appmenu:minimize,maximize,close'
+      gsettings set org.gnome.shell.extensions.dash-to-dock dock-fixed true
+      gsettings set org.gnome.shell.extensions.dash-to-dock show-trash false
+      gsettings set org.gnome.desktop.search-providers disable-external true
+      gsettings set org.gnome.shell enabled-extensions "['ubuntu-appindicators@ubuntu.com', 'desktop-icons@csoriano', 'ubuntu-dock@ubuntu.com']"
+      gsettings set org.gnome.shell.extensions.desktop-icons icon-size 'small'
+      gsettings set org.gnome.nautilus.preferences show-delete-permanently true
+      gsettings set org.gnome.nautilus.preferences default-folder-viewer 'list-view'
+      gsettings set org.gnome.nautilus.list-view use-tree-view true
+      gsettings set org.gnome.desktop.wm.preferences focus-mode 'mouse'
+      gsettings set org.gnome.desktop.session idle-delay 0
+      gsettings set org.gnome.desktop.interface gtk-theme 'Yaru-light'
+      touch $HOME/.gnome_set_defaults
+    fi
+  path: /usr/local/bin/xrdp-ubuntu-gnome-defaults.sh
+  permissions: '0755'
+
+- content: |
+    [Desktop Entry]
+    Type=Application
+    Name=SetCustomGnomeDefaults
+    Exec=/usr/local/bin/xrdp-ubuntu-gnome-defaults.sh
+  path: /etc/xdg/autostart/gnome-adm-defaults.desktop
+  permissions: '0644'
+
+# get rid of authentication requests for color profiles
+- content: |
+    [Allow Colord all Users]
+    Identity=unix-user:*
+    Action=org.freedesktop.color-manager.create-device;org.freedesktop.color-manager.create-profile;org.freedesktop.color-manager.delete-device;org.freedesktop.color-manager.delete-profile;org.freedesktop.color-manager.modify-device;org.freedesktop.color-manager.modify-profile
+    ResultAny=no
+    ResultInactive=no
+    ResultActive=yes
+  path: /etc/polkit-1/localauthority/50-local.d/45-allow-colord.pkla
+
+
+# landscape SSL certificate for on-prem server
+- content: |
+    -----BEGIN CERTIFICATE-----
+    content
+    of
+    certificate
+    -----END CERTIFICATE-----
+  path: /etc/landscape/server.pem
+  permissions: '0644'
+
+# base Landscape config
+landscape:
+  client:
+    url: https://landscape/message-system
+    ping_url: http://landscape/ping 
+    registration_key: <regkey>
+    account_name: standalone
+    script_users: root
+    ssl_public_key: /etc/landscape/server.pem
+
+# some more config...
+runcmd:
+  - sed -i "s|PasswordAuthentication.*|PasswordAuthentication yes|" /etc/ssh/sshd_config
+  - landscape-config --silent -t $( hostname ) --tags=lxc
+  # - update-alternatives --set x-session-manager /usr/bin/xfce4-session
+  - sed -i 's|XKBLAYOUT.*|XKBLAYOUT="se,us"|' /etc/default/keyboard
+  - timedatectl set-timezone Europe/Stockholm
+  - systemctl disable cups-browsed.service fwupd-refresh.service
+  - snap remove lxd
+  - systemctl set-default multi-user.target
+
+
+users:
+  - name: user
+    gecos: User Lastname
+    shell: /bin/bash
+    lock_passwd: false
+    passwd: <encrypted password string>
+    ssh_authorized_keys: 
+      - <public ssh key>
+    sudo: ALL=(ALL) NOPASSWD:ALL
+  - name: ansible
+    gecos: ansible user
+    shell: /bin/bash
+    lock_passwd: true
+    ssh_authorized_keys: 
+      - <public ssh key>
+    sudo: ALL=(ALL) NOPASSWD:ALL
+
+# reboot after finish
+power_state:
+  mode: reboot
+  delay: now

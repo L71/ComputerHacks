@@ -1,0 +1,118 @@
+#cloud-config
+
+# setup a small swap file (only useful on VMs)
+# swap:
+#   filename: /swapfile
+#   size: 500M
+
+# packages:
+#   - stress
+package_update: true
+package_upgrade: true
+
+packages:
+  - stress
+  - landscape-client
+  - xubuntu-desktop
+  - xubuntu-default-settings
+  - fonts-cascadia-code
+  - xrdp
+  - firefox
+  - python-is-python3
+
+write_files:
+# landscape SSL certificate for on-prem server
+- content: |
+    -----BEGIN CERTIFICATE-----
+    content
+    of
+    certificate
+    -----END CERTIFICATE-----
+  path: /etc/landscape/server.pem
+  permissions: '0644'
+
+
+# the following two files applies a bunch of xfce4 defaults at the first login
+- content: |
+    #!/bin/bash
+    if [ ! -f "$HOME/.xfce_set_defaults" ]; then
+      xfconf-query -c xfwm4 -n -t string -p /general/theme -s Numix
+      xfconf-query -c xfwm4 -n -t bool -p /general/use_compositing -s false
+      xfconf-query -c xfce4-screensaver -n -t bool -p /saver/enabled -s false
+      xfconf-query -c xfwm4 -n -t bool -p /general/click_to_focus -s false
+      xfconf-query -c xfwm4 -n -t string -p /general/double_click_action -s shade
+      xfconf-query -c xfce4-power-manager -n -t bool -p /xfce4-power-manager/dpms-enabled -s false
+      xfconf-query -c xfce4-desktop -n -t string -p /backdrop/screen0/monitorrdp0/workspace0/last-image -s /usr/share/backgrounds/wallpaper.jpg
+      # hide second panel:
+      # xfconf-query -c xfce4-panel -p /panels/panel-2 -r -R
+      # xfconf-query -c xfce4-panel -p /panels -n -a -t int -s 1
+      # xfce4-panel-profiles load "/usr/share/xfce4-panel-profiles/layouts/Xubuntu 18.04 (Bionic).tar.bz2"
+      touch $HOME/.xfce_set_defaults
+    fi
+  path: /usr/local/bin/xrdp-ubuntu-xfce-defaults.sh
+  permissions: '0755'
+
+- content: |
+    [Desktop Entry]
+    Type=Application
+    Name=SetCustomXfwm4Defaults
+    Exec=/usr/local/bin/xrdp-ubuntu-xfce-defaults.sh
+  path: /etc/xdg/autostart/xfce4-adm-defaults.desktop
+  permissions: '0644'
+
+# make sure all users are allowed to manage color profiles (avoid the auth dialog that will show up otherwise)
+- content: |
+    [Allow Colord all Users]
+    Identity=unix-user:*
+    Action=org.freedesktop.color-manager.create-device;org.freedesktop.color-manager.create-profile;org.freedesktop.color-manager.delete-device;org.freedesktop.color-manager.delete-profile;org.freedesktop.color-manager.modify-device;org.freedesktop.color-manager.modify-profile
+    ResultAny=no
+    ResultInactive=no
+    ResultActive=yes
+  path: /etc/polkit-1/localauthority/50-local.d/45-allow-colord.pkla
+
+# base Landscape config + certificate for on-prem server
+landscape:
+  client:
+    url: https://landscape/message-system
+    ping_url: http://landscape/ping 
+    registration_key: <regkey>
+    account_name: standalone
+    script_users: root
+    ssl_public_key: /etc/landscape/server.pem
+
+
+# run a bunch of commands to set things up...
+runcmd:
+  - sed -i "s|PasswordAuthentication.*|PasswordAuthentication yes|" /etc/ssh/sshd_config
+  - landscape-config --silent -t $( hostname ) --tags=lxc
+  - update-alternatives --set x-session-manager /usr/bin/xfce4-session
+  - curl -sS --retry 3 -o /usr/share/backgrounds/wallpaper.jpg http://URL/to/wallpaper.jpg
+  - sed -i 's|XKBLAYOUT.*|XKBLAYOUT="se,us"|' /etc/default/keyboard
+  - dpkg -P blueman
+  - snap remove lxd
+  - apt -y remove xfce4-screensaver
+  - timedatectl set-timezone Europe/Stockholm
+  - systemctl set-default multi-user.target
+
+
+users:
+  - name: user
+    gecos: User Lastname
+    shell: /bin/bash
+    lock_passwd: false
+    passwd: <encrypted password string>
+    ssh_authorized_keys: 
+      - <public ssh key>
+    sudo: ALL=(ALL) NOPASSWD:ALL
+  - name: ansible
+    gecos: ansible user
+    shell: /bin/bash
+    lock_passwd: true
+    ssh_authorized_keys: 
+      - <public ssh key>
+    sudo: ALL=(ALL) NOPASSWD:ALL
+
+# reboot after finish
+power_state:
+  mode: reboot
+  delay: now
