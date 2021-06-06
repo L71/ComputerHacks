@@ -23,12 +23,8 @@ users:
     sudo: ALL=(ALL) NOPASSWD:ALL
 
 
-# packages:
-#   - stress
 package_update: true
 package_upgrade: true
-
-
 packages:
   - stress
   - landscape-client

@@ -1,12 +1,9 @@
 #cloud-config
 
-#cloud-config
-
 # setup a small swap file (only useful on VMs)
 # swap:
 #   filename: /swapfile
 #   size: 500M
-
 
 package_update: true
 package_upgrade: true
@@ -19,9 +16,7 @@ packages:
   - xrdp
   - python-is-python3
 
-
 write_files:
-
 # set some defaults for the GNOME desktop (only on first login)
 - content: |
     #!/bin/bash

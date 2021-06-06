@@ -5,11 +5,8 @@
 #   filename: /swapfile
 #   size: 500M
 
-# packages:
-#   - stress
 package_update: true
 package_upgrade: true
-
 packages:
   - stress
   - landscape-client
@@ -30,7 +27,6 @@ write_files:
     -----END CERTIFICATE-----
   path: /etc/landscape/server.pem
   permissions: '0644'
-
 
 # the following two files applies a bunch of xfce4 defaults at the first login
 - content: |
