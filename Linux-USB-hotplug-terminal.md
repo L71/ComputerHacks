@@ -30,11 +30,22 @@ On a Mac the created USB device will be called something like `/dev/tty.usbseria
 
 ### systemd unit modification
 
-Edit the file `/lib/systemd/system/serial-getty@.service` and change the `ExecStart` line to this:
+In the file `/lib/systemd/system/serial-getty@.service` the `ExecStart` setting needs to be changed to this:
 ```
 ExecStart=-/sbin/agetty 115200 %I $TERM
 ```
-You can even enable automatic login on the terminal when the USB adapter is plugged in:
+
+The proper way to achieve this (and prevent overwrites on package upgrades) is to create an override file for the systemd unit.
+
+Create the file `/etc/systemd/system/serial-getty@.service.d/override.conf` with the following lines in it. You can also run `sudo systemctl edit serial-getty@.service` which will create the file and open it in an editor.
+```
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty 115200 %I $TERM
+```
+
+You can even enable automatic login on the terminal when the USB adapter is plugged in 
+
 ```
 ExecStart=-/sbin/agetty --autologin youruser 115200 %I $TERM
 ```
@@ -88,8 +99,13 @@ if [[ $(tty) == /dev/ttyUSB* ]]; then export TMOUT=600; fi
 ```bash
 #!/bin/bash
 
-# adjust systemd serial TTY service
-sed -i.backup 's|^ExecStart=.*|ExecStart=-/sbin/agetty 115200 %I $TERM|' /lib/systemd/system/serial-getty@.service
+# override ExecStart in systemd serial TTY service
+mkdir -p /etc/systemd/system/serial-getty@.service.d
+cat > /etc/systemd/system/serial-getty@.service.d/override.conf <<-EOF
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty 115200 %I $TERM
+EOF
 
 # add UDEV hotplug rule
 cat > /etc/udev/rules.d/99-hotplug-usb-tty.rules <<-EOF
