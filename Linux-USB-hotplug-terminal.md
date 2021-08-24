@@ -15,7 +15,7 @@ USB -> FTDI1       FTDI2 <- USB
         RX    <->   TX
         GND   <->   GND
 ```
-It does not matter if the FTDI adapters are 3.3V or 5V logic level type as long as they are the same. Also, don't connect VCC between them! Both ends are assumed to be using 115200 kbit settings.
+It does not matter if the FTDI adapters are 3.3V or 5V logic level type as long as they are the same. Also, don't connect the VCC / +5V line between them! Both ends are assumed to be using 115200 kbit settings.
 
 ## The terminal side (your client) 
 On the terminal side (if you run Linux) you may need to make sure your user ID is in a certain group to get access to the USB tty device without using the root account. On Ubuntu this is the `dialout` group.
